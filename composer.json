@@ -26,7 +26,8 @@
         "symfony/serializer": "6.3.*",
         "symfony/twig-bundle": "6.3.*",
         "symfony/yaml": "6.3.*",
-        "twig/twig": "^3.7"
+        "twig/twig": "^3.7",
+        "doctrine/doctrine-fixtures-bundle": "^3.6"
     },
     "config": {
         "allow-plugins": {
@@ -79,7 +80,6 @@
         }
     },
     "require-dev": {
-        "doctrine/doctrine-fixtures-bundle": "^3.6",
         "fakerphp/faker": "^1.24",
         "symfony/maker-bundle": "*"
     }
