@@ -1,36 +1,50 @@
-# Utilisez une image PHP comme base
+# Use PHP 8.1 with Apache
 FROM php:8.1-apache
 
-# Installez les dépendances nécessaires
+# Set working directory
+WORKDIR /var/www/html
+
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libpq-dev \
     libzip-dev \
     cron \
-    && docker-php-ext-install pdo pdo_mysql zip
+    libicu-dev \
+    libxml2-dev \
+    zlib1g-dev \
+    && docker-php-ext-install pdo pdo_mysql intl zip opcache
 
-# Retournez au répertoire de travail principal
-WORKDIR /var/www/html
+# Enable Apache rewrite module
+RUN a2enmod rewrite
 
-# Install Composer
+# Set Apache document root to Symfony public folder
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Copy composer from official image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configurez le serveur web Apache
-RUN a2enmod rewrite && \
-    service apache2 restart
+# Copy project files
+COPY . /var/www/html
 
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Exposez le port sur lequel Symfony écoute (par défaut 8000)
-EXPOSE 8000
+# Set correct permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/public \
+    && chmod -R 777 /var/www/html/var
 
-# Add cron job
+# Copy and setup cron job
 COPY cronjob /etc/cron.d/cronjob
-RUN chmod 0644 /etc/cron.d/cronjob
-RUN crontab /etc/cron.d/cronjob
+RUN chmod 0644 /etc/cron.d/cronjob \
+    && crontab /etc/cron.d/cronjob
 
-# Start cron service
+# Expose port 80 (Apache default)
+EXPOSE 80
+
+# Start cron and Apache
 CMD ["/bin/bash", "-c", "cron && apache2-foreground"]
