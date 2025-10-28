@@ -9,7 +9,7 @@ ENV APP_DEBUG=0
 # Installer dépendances système et PHP
 RUN apt-get update && apt-get install -y \
     git unzip libpq-dev libzip-dev cron libicu-dev libxml2-dev zlib1g-dev \
-    && docker-php-ext-install pdo pdo_mysql intl zip opcache
+    && docker-php-ext-install pdo pdo_mysql pdo_sqlite intl zip opcache
 
 # Activer mod_rewrite
 RUN a2enmod rewrite
@@ -38,7 +38,7 @@ RUN mkdir -p var/cache var/log public
 RUN echo "APP_SECRET=your_app_secret_placeholder" > .env
 RUN echo "DATABASE_URL=sqlite:///var/data.db" >> .env
 
-# Permissions correctes AVANT de lancer les commandes Symfony
+# Permissions correctes AVANT de lancer les commands Symfony
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/public \
     && chmod -R 777 /var/www/html/var/cache \
@@ -57,9 +57,9 @@ EXPOSE 80
 CMD ["/bin/bash", "-c", "\
     echo '📦 Running Symfony initialization...'; \
     cron; \
-    php bin/console doctrine:database:create --if-not-exists || true; \
-    php bin/console doctrine:migrations:migrate --no-interaction || true; \
-    php bin/console doctrine:fixtures:load --no-interaction || true; \
-    php bin/console cache:clear --no-warmup || true; \
+    su www-data -c \"php bin/console doctrine:database:create --if-not-exists || true\"; \
+    su www-data -c \"php bin/console doctrine:migrations:migrate --no-interaction || true\"; \
+    su www-data -c \"php bin/console doctrine:fixtures:load --no-interaction || true\"; \
+    su www-data -c \"php bin/console cache:clear --no-warmup || true\"; \
     echo '🚀 Starting Apache...'; \
     apache2-foreground"]
