@@ -31,6 +31,9 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copier le reste du projet
 COPY . /var/www/html
 
+# Créer les répertoires nécessaires si absents
+RUN mkdir -p var public
+
 # Permissions correctes AVANT de lancer les commandes Symfony
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/public \
