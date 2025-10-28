@@ -40,10 +40,6 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 777 /var/www/html/var/cache \
     && chmod -R 777 /var/www/html/var/log
 
-# Exécuter les commandes Symfony après que tout le projet soit copié et les permissions définies
-RUN php bin/console cache:clear --no-warmup
-RUN php bin/console assets:install public
-
 # Copier cron (optionnel)
 COPY cronjob /etc/cron.d/cronjob
 RUN chmod 0644 /etc/cron.d/cronjob \
