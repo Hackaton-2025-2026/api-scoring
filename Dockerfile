@@ -34,6 +34,10 @@ COPY . /var/www/html
 # Créer les répertoires nécessaires si absents
 RUN mkdir -p var/cache var/log public
 
+# Créer un fichier .env temporaire pour le build
+RUN echo "APP_SECRET=your_app_secret_placeholder" > .env
+RUN echo "DATABASE_URL=sqlite:///var/data.db" >> .env
+
 # Permissions correctes AVANT de lancer les commandes Symfony
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/public \
