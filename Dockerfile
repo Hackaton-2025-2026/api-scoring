@@ -21,14 +21,17 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 COPY . /var/www/html
 
-# Créer var/public si nécessaire
 RUN mkdir -p var public
-
-# Permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/public \
     && chmod -R 777 /var/www/html/var
 
+# Add cron job
+COPY cronjob /etc/cron.d/cronjob
+RUN chmod 0644 /etc/cron.d/cronjob
+RUN crontab /etc/cron.d/cronjob
+
 EXPOSE 80
 
-CMD ["apache2-foreground"]
+# Start cron service
+CMD ["/bin/bash", "-c", "cron && apache2-foreground"]
