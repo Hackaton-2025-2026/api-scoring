@@ -10,8 +10,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Mercure\PublisherInterface;
-use Symfony\Component\Mercure\Update;
 use Symfony\Component\Serializer\SerializerInterface;
 
 #[AsCommand(
@@ -24,7 +22,6 @@ class UpdateRaceTimesCommand extends Command
         private EntityManagerInterface $entityManager,
         private RaceRepository $raceRepository,
         private ResultRepository $resultRepository,
-        private PublisherInterface $publisher,
         private SerializerInterface $serializer
     ) {
         parent::__construct();
@@ -149,19 +146,6 @@ class UpdateRaceTimesCommand extends Command
         }
 
         $this->entityManager->flush();
-
-        // Publish Mercure updates for all updated races
-        foreach ($updatedRaces as $race) {
-            // Serialize the race object to JSON
-            // You might need to configure serialization groups in your Race entity
-            // to control what data is exposed via Mercure.
-            $json = $this->serializer->serialize($race, 'json', ['groups' => ['race:read']]);
-            $update = new Update(
-                getenv('API_PUBLIC_URL') . '/races/' . $race->getId(), // Topic URL
-                $json
-            );
-            $this->publisher->__invoke($update);
-        }
 
         $io->success('Race times and ranks updated successfully.');
 

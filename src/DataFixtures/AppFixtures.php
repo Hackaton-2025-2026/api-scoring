@@ -32,6 +32,7 @@ class AppFixtures extends Fixture
         $races = [];
         $numberOfCurrentRaces = 5; // Define how many races should be "current"
         $numberOfPastRaces = 5; // Define how many races should be "past"
+        $raceWithNoFinishersIndex = 0; // The index of the race that should have no finishers
 
         for ($i = 0; $i < 20; $i++) {
             $race = new Race();
@@ -99,10 +100,15 @@ class AppFixtures extends Fixture
                     $hasFinished = $faker->boolean(20);
                 }
 
+                // If this is the race with no finishers, ensure hasFinished is false
+                if ($index === $raceWithNoFinishersIndex) {
+                    $hasFinished = false;
+                }
+
                 $result->setHasFinished($hasFinished);
 
-                // Calculate time per km between 3:00 and 7:00
-                $minutesPerKm = $faker->numberBetween(3, 7);
+                // Calculate time per km between 4:00 and 8:00
+                $minutesPerKm = $faker->numberBetween(4, 8);
                 $secondsPerKm = $faker->numberBetween(0, 59);
                 $totalSecondsPerKm = ($minutesPerKm * 60) + $secondsPerKm;
 
@@ -118,21 +124,18 @@ class AppFixtures extends Fixture
                     $result->setTime($timeString);
                     $result->setLiveKilometer($race->getDistance());
                 } else {
-                    // For non-finishers, set a time that is clearly higher than any finisher
-                    // This simulates them still being on the course or having a very long time
-                    $extendedTotalSeconds = $totalRaceSeconds * $faker->randomFloat(2, 0.5, 1.5); // 50% to 150% of expected time
-                    $hours = floor($extendedTotalSeconds / 3600);
-                    $minutes = floor(($extendedTotalSeconds / 60) % 60);
-                    $seconds = $extendedTotalSeconds % 60;
+                    // For non-finishers, simulate a partial race time and distance
+                    $raceProgress = $faker->randomFloat(2, 0.1, 0.9); // Runner has completed 10% to 90% of the race
+                    $liveKilometer = $race->getDistance() * $raceProgress;
+                    $result->setLiveKilometer($liveKilometer);
+
+                    $partialTimeSeconds = $totalSecondsPerKm * $liveKilometer;
+
+                    $hours = floor($partialTimeSeconds / 3600);
+                    $minutes = floor(($partialTimeSeconds / 60) % 60);
+                    $seconds = $partialTimeSeconds % 60;
                     $timeString = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
                     $result->setTime($timeString);
-
-                    // Calculate liveKilometer for unfinished runners
-                    // Assuming a constant speed for simplicity in fixtures
-                    $averageSpeedKmh = 60 / $totalSecondsPerKm; // km/h
-                    $timeInHours = $extendedTotalSeconds / 3600;
-                    $liveKm = $averageSpeedKmh * $timeInHours;
-                    $result->setLiveKilometer(min($liveKm, $race->getDistance())); // Ensure it doesn't exceed race distance
                 }
 
                 $resultCreateAt = $faker->dateTimeBetween($race->getStartDate() < new \DateTime() ? $race->getStartDate() : 'now', 'now');
@@ -180,26 +183,39 @@ class AppFixtures extends Fixture
 
             // After generating all results for a race, determine its overall status and set kilometer
             if ($race->getStartDate() <= new \DateTime()) { // Past or current race
-                $hasUnfinishedRunners = false;
-                foreach ($raceResults as $result) {
-                    if (!$result->isHasFinished()) {
-                        $hasUnfinishedRunners = true;
-                        break;
-                    }
-                }
+                // Set race kilometer to the liveKilometer of the first runner
+                if (!empty($raceResults)) {
+                    $firstRunnerResult = $raceResults[0];
+                    $race->setKilometer($firstRunnerResult->getLiveKilometer());
 
-                if ($hasUnfinishedRunners) { // Current race
-                    // Set race kilometer to the max liveKilometer of unfinished runners
-                    $maxLiveKilometer = 0.0;
-                    foreach ($raceResults as $result) {
-                        if (!$result->isHasFinished() && $result->getLiveKilometer() > $maxLiveKilometer) {
-                            $maxLiveKilometer = $result->getLiveKilometer();
+                    // If it's a current race and there are unfinished runners, set their times to be superior to all finished times
+                    if (!$race->isFinished()) {
+                        $maxFinishedTime = null;
+                        foreach ($raceResults as $result) {
+                            if ($result->isHasFinished()) {
+                                if ($maxFinishedTime === null || strcmp($result->getTime(), $maxFinishedTime) > 0) {
+                                    $maxFinishedTime = $result->getTime();
+                                }
+                            }
+                        }
+
+                        $baseTime = new \DateTime('00:00:00');
+                        if ($maxFinishedTime !== null) {
+                            $baseTime = \DateTime::createFromFormat('H:i:s', $maxFinishedTime);
+                            $baseTime->modify('+1 minute'); // Ensure it's superior
+                        }
+
+                        foreach ($raceResults as $result) {
+                            if (!$result->isHasFinished()) {
+                                $result->setTime($baseTime->format('H:i:s'));
+                            }
                         }
                     }
-                    $race->setKilometer($maxLiveKilometer);
-                } else { // Finished race
-                    $race->setKilometer($race->getDistance());
+                } else {
+                    $race->setKilometer(0.0); // No runners, so 0 km
                 }
+            } else {
+                $race->setKilometer(0.0); // Future races start at 0 km
             }
         }
 
