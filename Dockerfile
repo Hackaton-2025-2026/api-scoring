@@ -32,7 +32,7 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 COPY . /var/www/html
 
 # Créer les répertoires nécessaires si absents
-RUN mkdir -p var public
+RUN mkdir -p var/cache var/log public
 
 # Créer un fichier .env temporaire pour le build
 RUN echo "APP_SECRET=your_app_secret_placeholder" > .env
@@ -41,7 +41,8 @@ RUN echo "DATABASE_URL=sqlite:///var/data.db" >> .env
 # Permissions correctes AVANT de lancer les commandes Symfony
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/public \
-    && chmod -R 777 /var/www/html/var
+    && chmod -R 777 /var/www/html/var/cache \
+    && chmod -R 777 /var/www/html/var/log
 
 # Exécuter les commandes Symfony après que tout le projet soit copié et les permissions définies
 RUN php bin/console cache:clear --no-warmup
