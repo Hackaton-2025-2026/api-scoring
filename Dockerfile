@@ -35,6 +35,9 @@ RUN mkdir -p var/cache var/log public \
     && chown -R www-data:www-data var public \
     && chmod -R 777 var/cache var/log
 
+RUN echo "APP_SECRET=your_app_secret_placeholder" > .env
+RUN echo "DATABASE_URL=postgresql://api_scoring_db_user:fY9YYZqdaoZ8EnKqeE6IPOn7oBWmKZ6L@dpg-d40ihmjuibrs73cs8bvg-a.frankfurt-postgres.render.com/api_scoring_db" >> .env
+
 # Note: Environment variables (APP_SECRET, DATABASE_URL) should be set in Render dashboard
 # They will be available at runtime and override any .env file
 
