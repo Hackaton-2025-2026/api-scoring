@@ -26,7 +26,7 @@ if [ $i -eq $MAX_TRIES ]; then
   exit 1
 fi
 
-echo "📦 Database ready, updating schema..."
+echo "📦 Database ready, updating schema and loading fixtures..."
 
 # Make sure var directories exist with all necessary subdirectories
 mkdir -p var/cache/dev var/cache/prod var/log
@@ -41,9 +41,8 @@ chmod -R 777 var/cache/dev var/cache/prod
 # Force update schema
 php bin/console doctrine:schema:update --force
 
-# Note: Fixtures are NOT loaded in production
-# If you need to load fixtures on Render, uncomment the line below:
-# php bin/console doctrine:fixtures:load --no-interaction || true
+# Load fixtures
+php bin/console doctrine:fixtures:load --no-interaction || true
 
 # Clear cache
 php bin/console cache:clear --no-warmup
