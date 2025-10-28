@@ -26,6 +26,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy composer files and install dependencies
 COPY composer.json composer.lock ./
 RUN composer install --optimize-autoloader --no-scripts
+RUN composer require doctrine/fixtures-bundle
 
 # Copy the rest of the project
 COPY . /var/www/html
