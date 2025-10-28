@@ -2,6 +2,10 @@ FROM php:8.1-apache
 
 WORKDIR /var/www/html
 
+# Set environment variables for production build
+ENV APP_ENV=prod
+ENV APP_DEBUG=0
+
 # Installer dépendances système et PHP
 RUN apt-get update && apt-get install -y \
     git unzip libpq-dev libzip-dev cron libicu-dev libxml2-dev zlib1g-dev \
@@ -18,11 +22,14 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 # Copier Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copier projet entier **avant composer install**
-COPY . /var/www/html
+# Copier composer.json et composer.lock pour installer les dépendances
+COPY composer.json composer.lock ./
 
 # Installer dépendances PHP
 RUN composer install --no-dev --optimize-autoloader
+
+# Copier le reste du projet
+COPY . /var/www/html
 
 # Permissions correctes
 RUN chown -R www-data:www-data /var/www/html \
