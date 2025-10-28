@@ -25,11 +25,15 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copier composer.json et composer.lock pour installer les dépendances
 COPY composer.json composer.lock ./
 
-# Installer dépendances PHP
-RUN composer install --no-dev --optimize-autoloader
+# Installer dépendances PHP (sans exécuter les scripts post-install)
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 # Copier le reste du projet
 COPY . /var/www/html
+
+# Exécuter les commandes Symfony après que tout le projet soit copié
+RUN php bin/console cache:clear --no-warmup
+RUN php bin/console assets:install public
 
 # Permissions correctes
 RUN chown -R www-data:www-data /var/www/html \
