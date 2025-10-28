@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Race;
 use App\Entity\Result;
+use App\Entity\Runner;
 use App\Repository\RaceRepository;
 use App\Repository\ResultRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -100,5 +101,25 @@ class RaceController extends AbstractController
     public function getRaceKilometer(Race $race): JsonResponse
     {
         return new JsonResponse(['kilometer' => $race->getKilometer()]);
+    }
+
+    #[Route('/{id}/runners', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Successful response',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: Runner::class, groups: ['runner:read']))
+        )
+    )]
+    #[OA\Parameter(name: 'id', in: 'path', description: 'The ID of the race', schema: new OA\Schema(type: 'integer'))]
+    public function getRaceRunners(Race $race): JsonResponse
+    {
+        $runners = [];
+        foreach ($race->getResults() as $result) {
+            $runners[] = $result->getRunner();
+        }
+        $data = $this->serializer->serialize($runners, 'json', ['groups' => 'runner:read']);
+        return new JsonResponse($data, json: true);
     }
 }

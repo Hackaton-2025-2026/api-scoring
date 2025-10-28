@@ -20,7 +20,8 @@ services:
       APP_SECRET: your_app_secret # Replace with a strong secret
       MERCURE_URL: http://mercure/.well-known/mercure # Internal URL for Symfony to publish
       MERCURE_PUBLIC_URL: ${API_PUBLIC_URL}/.well-known/mercure # Public URL for frontend to subscribe
-      MERCURE_JWT_SECRET: fz2Ghtz9n4E4EEoa/pwT//cUX7XaVjib+CXwGebpNVI= # Use the same secret as the mercure service
+      MERCURE_JWT_SECRET: "fz2Ghtz9n4E4EEoa/pwT//cUX7XaVjib+CXwGebpNVI=" # Use the same secret as the mercure service
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN}
     networks:
       - app-network
 
@@ -47,7 +48,7 @@ services:
     environment:
       MERCURE_PUBLISH_URL: http://mercure/.well-known/mercure # Internal URL for publishing
       MERCURE_SUBSCRIBE_URL: http://mercure/.well-known/mercure # Internal URL for subscribing
-      MERCURE_JWT_SECRET: fz2Ghtz9n4E4EEoa/pwT//cUX7XaVjib+CXwGebpNVI= # Use a secret for JWT signing
+      MERCURE_JWT_SECRET: "fz2Ghtz9n4E4EEoa/pwT//cUX7XaVjib+CXwGebpNVI=" # Use a secret for JWT signing
       MERCURE_DEBUG: 1 # Enable debug mode
     networks:
       - app-network
