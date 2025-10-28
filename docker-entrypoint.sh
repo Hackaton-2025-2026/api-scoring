@@ -3,16 +3,13 @@ set -e
 
 echo "📦 Running Symfony initialization..."
 
-# Ensure directories exist and have correct permissions
+# Ensure var directories exist and are writable
 mkdir -p var/cache var/log
 chown -R www-data:www-data var
-chmod -R 777 var/cache var/log
-
-# Run database migrations at container startup
-php bin/console doctrine:migrations:migrate --no-interaction || true
+chmod -R 777 var
 
 # Clear cache for prod
-php bin/console cache:clear --no-warmup || true
+php bin/console cache:clear --no-warmup
 
 echo "🚀 Starting Apache..."
 exec apache2-foreground
