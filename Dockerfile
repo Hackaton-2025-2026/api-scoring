@@ -30,10 +30,13 @@ RUN composer install --optimize-autoloader --no-scripts --no-dev
 # Copy the rest of the project
 COPY . /var/www/html
 
+RUN mkdir -p /var/www/html/var/cache /var/www/html/var/log /var/www/html/public
+
 # Ensure directories exist and have correct permissions
-RUN mkdir -p var/cache var/log public \
-    && chown -R www-data:www-data var public \
-    && chmod -R 777 var/cache var/log
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/public \
+    && chmod -R 777 /var/www/html/var/cache \
+    && chmod -R 777 /var/www/html/var/log
 
 RUN echo "APP_SECRET=your_app_secret_placeholder" > .env
 RUN echo "DATABASE_URL=postgresql://api_scoring_db_user:fY9YYZqdaoZ8EnKqeE6IPOn7oBWmKZ6L@dpg-d40ihmjuibrs73cs8bvg-a.frankfurt-postgres.render.com/api_scoring_db" >> .env
