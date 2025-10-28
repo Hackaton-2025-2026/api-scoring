@@ -25,13 +25,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy composer files and install dependencies
 COPY composer.json composer.lock ./
-RUN composer install --optimize-autoloader --no-dev --no-scripts
+RUN composer install --optimize-autoloader --no-scripts
+RUN composer require doctrine/fixtures-bundle
 
 # Copy the rest of the project
 COPY . /var/www/html
 
 # Ensure directories exist and have correct permissions
-RUN mkdir -p var/cache/prod var/cache/dev var/log public \
+RUN mkdir -p var/cache var/log public \
     && chown -R www-data:www-data var public \
     && chmod -R 777 var/cache var/log
 

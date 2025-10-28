@@ -1,20 +1,21 @@
 #!/bin/bash
 set -e
 
+# Full PostgreSQL URL
+DB_URL='postgresql://api_scoring_db_user:fY9YYZqdaoZ8EnKqeE6IPOn7oBWmKZ6L@dpg-d40ihmjuibrs73cs8bvg-a.frankfurt-postgres.render.com/api_scoring_db'
+
 echo "📦 Waiting for PostgreSQL to be ready..."
 
-# Extraire les infos depuis DATABASE_URL
-# DATABASE_URL=postgres://user:password@host:port/dbname
-DB_URL='postgresql://api_scoring_db_user:fY9YYZqdaoZ8EnKqeE6IPOn7oBWmKZ6L@dpg-d40ihmjuibrs73cs8bvg-a.frankfurt-postgres.render.com/api_scoring_db'
-DB_USER=$(echo $DB_URL | sed -E 's|postgres://([^:]+):.*|\1|')
-DB_PASS=$(echo $DB_URL | sed -E 's|postgres://[^:]+:([^@]+)@.*|\1|')
-DB_HOST=$(echo $DB_URL | sed -E 's|postgres://[^@]+@([^:/]+).*|\1|')
-DB_PORT=$(echo $DB_URL | sed -E 's|postgres://[^@]+@[^:/]+:([0-9]+).*|\1|')
-DB_NAME=$(echo $DB_URL | sed -E 's|.*/([^/?]+).*|\1|')
+# Extract parts from DB_URL
+DB_USER=$(echo $DB_URL | cut -d':' -f2 | sed 's|//||')
+DB_PASS=$(echo $DB_URL | cut -d':' -f3 | cut -d'@' -f1)
+DB_HOST=$(echo $DB_URL | cut -d'@' -f2 | cut -d'/' -f1)
+DB_NAME=$(echo $DB_URL | awk -F'/' '{print $NF}')
+DB_PORT=5432  # default PostgreSQL port
 
 MAX_TRIES=15
 i=0
-until pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER >/dev/null 2>&1 || [ $i -eq $MAX_TRIES ]; do
+until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" >/dev/null 2>&1 || [ $i -eq $MAX_TRIES ]; do
   i=$((i+1))
   echo "Trying to connect to database ($i/$MAX_TRIES)..."
   sleep 2
@@ -25,11 +26,10 @@ if [ $i -eq $MAX_TRIES ]; then
   exit 1
 fi
 
-echo "📦 Database ready, running schema update and loading fixtures..."
+echo "📦 Database ready, updating schema and loading fixtures..."
 
-# Fix permissions - create cache directories for all environments
-mkdir -p var/cache/prod var/cache/dev var/log
-chown -R www-data:www-data var || true
+# Fix permissions
+mkdir -p var/cache var/log
 chmod -R 777 var
 
 # Force update schema
