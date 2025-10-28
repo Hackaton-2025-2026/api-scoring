@@ -9,7 +9,7 @@ ENV APP_DEBUG=0
 # Installer dépendances système et PHP
 RUN apt-get update && apt-get install -y \
     git unzip libpq-dev libzip-dev cron libicu-dev libxml2-dev zlib1g-dev \
-    && docker-php-ext-install pdo pdo_mysql pdo_sqlite intl zip opcache
+    && docker-php-ext-install pdo pdo_mysql intl zip opcache
 
 # Activer mod_rewrite
 RUN a2enmod rewrite
