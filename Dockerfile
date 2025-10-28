@@ -31,14 +31,14 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copier le reste du projet
 COPY . /var/www/html
 
-# Exécuter les commandes Symfony après que tout le projet soit copié
-RUN php bin/console cache:clear --no-warmup
-RUN php bin/console assets:install public
-
-# Permissions correctes
+# Permissions correctes AVANT de lancer les commandes Symfony
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/public \
     && chmod -R 777 /var/www/html/var
+
+# Exécuter les commandes Symfony après que tout le projet soit copié et les permissions définies
+RUN php bin/console cache:clear --no-warmup
+RUN php bin/console assets:install public
 
 # Copier cron (optionnel)
 COPY cronjob /etc/cron.d/cronjob
