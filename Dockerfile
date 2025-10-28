@@ -25,9 +25,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy composer files and install dependencies
 COPY composer.json composer.lock ./
-# Update lock file to match composer.json changes, then install without dev deps
-RUN composer update --lock --no-scripts --no-dev && \
-    composer install --optimize-autoloader --no-scripts --no-dev
+RUN composer install --optimize-autoloader --no-scripts --no-dev
 
 # Copy the rest of the project
 COPY . /var/www/html
