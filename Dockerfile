@@ -53,6 +53,9 @@ COPY cronjob /etc/cron.d/cronjob
 RUN chmod 0644 /etc/cron.d/cronjob \
     && crontab /etc/cron.d/cronjob
 
+RUN mkdir -p var/cache var/log \
+    && chown -R www-data:www-data var
+
 EXPOSE 80
 
 CMD ["/bin/bash", "-c", "cron && apache2-foreground"]
