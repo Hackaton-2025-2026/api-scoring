@@ -40,19 +40,6 @@ services:
     networks:
       - app-network
 
-  mercure:
-    image: dunglas/mercure:latest # Official Mercure image
-    container_name: mercure
-    ports:
-      - "3000:80" # Expose Mercure on port 3000
-    environment:
-      MERCURE_PUBLISH_URL: http://mercure/.well-known/mercure # Internal URL for publishing
-      MERCURE_SUBSCRIBE_URL: http://mercure/.well-known/mercure # Internal URL for subscribing
-      MERCURE_JWT_SECRET: "fz2Ghtz9n4E4EEoa/pwT//cUX7XaVjib+CXwGebpNVI=" # Use a secret for JWT signing
-      MERCURE_DEBUG: 1 # Enable debug mode
-    networks:
-      - app-network
-
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     container_name: phpmyadmin
