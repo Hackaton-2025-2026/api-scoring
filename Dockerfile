@@ -10,8 +10,8 @@ ENV APP_DEBUG=0
 
 # Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
-    git unzip libpq-dev libzip-dev cron libicu-dev libxml2-dev zlib1g-dev \
-    && docker-php-ext-install pdo pdo_mysql intl zip opcache \
+    git unzip libpq-dev libzip-dev cron libicu-dev libxml2-dev zlib1g-dev postgresql-client \
+    && docker-php-ext-install pdo pdo_pgsql intl zip opcache \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
@@ -35,8 +35,8 @@ RUN mkdir -p var/cache var/log public \
     && chown -R www-data:www-data var public \
     && chmod -R 777 var/cache var/log
 
-RUN echo "APP_SECRET=fe3a3ab49fe8be9fe9e0b67ab66390b0" > .env
-RUN echo "DATABASE_URL=postgresql://api_scoring_db_user:fY9YYZqdaoZ8EnKqeE6IPOn7oBWmKZ6L@dpg-d40ihmjuibrs73cs8bvg-a/api_scoring_db" >> .env
+# Note: Environment variables (APP_SECRET, DATABASE_URL) should be set in Render dashboard
+# They will be available at runtime and override any .env file
 
 # Copy cronjob if needed
 COPY cronjob /etc/cron.d/cronjob
