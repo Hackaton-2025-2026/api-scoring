@@ -28,12 +28,15 @@ fi
 
 echo "📦 Database ready, updating schema and loading fixtures..."
 
-# Make sure var directories exist
-mkdir -p var/cache var/log
+# Make sure var directories exist with all necessary subdirectories
+mkdir -p var/cache/dev var/cache/prod var/log
 
 # Fix permissions so the running process can write
 chmod -R 777 var
 chmod -R 777 var/cache var/log
+
+# Ensure specific cache directories have write permissions
+chmod -R 777 var/cache/dev var/cache/prod
 
 # Force update schema
 php bin/console doctrine:schema:update --force
@@ -43,6 +46,11 @@ php bin/console doctrine:fixtures:load --no-interaction || true
 
 # Clear cache
 php bin/console cache:clear --no-warmup
+
+# Re-ensure permissions before starting Apache (Render might use different user)
+echo "📦 Final permissions check..."
+mkdir -p var/cache/prod
+chmod -R 777 var/cache var/log
 
 echo "🚀 Starting Apache..."
 exec apache2-foreground
