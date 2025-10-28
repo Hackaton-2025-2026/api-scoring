@@ -1,14 +1,21 @@
 {
+  "version": 2,
   "builds": [
     {
-      "src": "public/index.php",
-      "use": "@php-vercel/php-vercel"
+      "src": "api/index.php",
+      "use": "@vercel/php@0.6.0",
+      "config": { "runtime": "php-8.x" }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "public/index.php"
+      "dest": "api/index.php"
     }
-  ]
+  ],
+  "env": {
+    "APP_ENV": "prod",
+    "APP_SECRET": "@app_secret",
+    "DATABASE_URL": "@database_url"
+  }
 }
