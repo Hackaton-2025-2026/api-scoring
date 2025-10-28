@@ -5,7 +5,7 @@ echo "📦 Waiting for PostgreSQL to be ready..."
 
 # Extraire les infos depuis DATABASE_URL
 # DATABASE_URL=postgres://user:password@host:port/dbname
-DB_URL=${DATABASE_URL}
+DB_URL=postgresql://api_scoring_db_user:fY9YYZqdaoZ8EnKqeE6IPOn7oBWmKZ6L@dpg-d40ihmjuibrs73cs8bvg-a.frankfurt-postgres.render.com/api_scoring_db
 DB_USER=$(echo $DB_URL | sed -E 's|postgres://([^:]+):.*|\1|')
 DB_PASS=$(echo $DB_URL | sed -E 's|postgres://[^:]+:([^@]+)@.*|\1|')
 DB_HOST=$(echo $DB_URL | sed -E 's|postgres://[^@]+@([^:/]+).*|\1|')
