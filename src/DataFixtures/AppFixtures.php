@@ -22,12 +22,16 @@ class AppFixtures extends Fixture
             'Marathon de Séville', 'Marathon de Valence', 'Marathon de Rotterdam',
             'Marathon de Hambourg', 'Marathon de Stockholm', 'Marathon d\'Amsterdam',
             'Marathon de Dublin', 'Marathon d\'Athènes', 'Marathon de Prague',
-            'Marathon de Copenhague', 'Marathon de Lisbonne'
+            'Marathon de Copenhague', 'Marathon de Lisbonne', 'Marathon de Budapest',
+            'Marathon de Vienne', 'Marathon de Madrid', 'Marathon de Florence',
+            'Marathon de Jérusalem', 'Marathon de la Grande Muraille', 'Marathon de l Everest',
+            'Marathon du Mont-Blanc', 'Marathon de la Baie du Mont-Saint-Michel', 'Marathon du Médoc'
         ];
 
         // Create 20 Races
         $races = [];
         $numberOfCurrentRaces = 5; // Define how many races should be "current"
+        $numberOfPastRaces = 5; // Define how many races should be "past"
 
         for ($i = 0; $i < 20; $i++) {
             $race = new Race();
@@ -41,9 +45,15 @@ class AppFixtures extends Fixture
             if ($i < $numberOfCurrentRaces) {
                 // Make these races "current" - started recently
                 $race->setStartDate($faker->dateTimeBetween('-30 minutes', '-5 minutes'));
+                $race->setIsFinished(false);
+            } elseif ($i < $numberOfCurrentRaces + $numberOfPastRaces) {
+                // Make these races "past" - started in the past and finished
+                $race->setStartDate($faker->dateTimeBetween('-2 years', '-1 year'));
+                $race->setIsFinished(true);
             } else {
-                // Keep existing logic for other races
-                $race->setStartDate($faker->dateTimeBetween('-1 year', '+1 year'));
+                // Keep existing logic for other races (future)
+                $race->setStartDate($faker->dateTimeBetween('+1 day', '+1 year'));
+                $race->setIsFinished(false);
             }
 
             $race->setCreateAt($faker->dateTimeBetween('-5 years', '-2 years'));
@@ -54,9 +64,9 @@ class AppFixtures extends Fixture
             $races[] = $race;
         }
 
-        // Create 100 Runners
+        // Create 200 Runners
         $runners = [];
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < 200; $i++) {
             $runner = new Runner();
             $runner->setRace($faker->randomElement($races));
             $runner->setFirstName($faker->firstName());
@@ -70,7 +80,7 @@ class AppFixtures extends Fixture
         }
 
         // Create Results for each Runner in each Race
-        foreach ($races as $index => $race) { // Use index to identify "current" races
+        foreach ($races as $index => $race) {
             $raceResults = [];
             $raceRunners = $faker->randomElements($runners, $faker->numberBetween(10, 30));
 
@@ -81,7 +91,10 @@ class AppFixtures extends Fixture
 
                 $hasFinished = $faker->boolean(80); // Default 80% chance of finishing
 
-                if ($index < $numberOfCurrentRaces) {
+                // For races explicitly marked as finished (past races), all runners should be finished
+                if ($race->isFinished()) {
+                    $hasFinished = true;
+                } elseif ($index < $numberOfCurrentRaces) {
                     // For "current" races, ensure more unfinished runners (e.g., 20% chance of finishing)
                     $hasFinished = $faker->boolean(20);
                 }
@@ -94,7 +107,7 @@ class AppFixtures extends Fixture
                 $totalSecondsPerKm = ($minutesPerKm * 60) + $secondsPerKm;
 
                 // Calculate total time in seconds
-                $totalRaceSeconds = $totalSecondsPerKm * $race->getKilometer();
+                $totalRaceSeconds = $totalSecondsPerKm * $race->getDistance(); // Use race distance for total time calculation
 
                 if ($hasFinished) {
                     // Convert total seconds to H:i:s format
@@ -103,15 +116,23 @@ class AppFixtures extends Fixture
                     $seconds = $totalRaceSeconds % 60;
                     $timeString = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
                     $result->setTime($timeString);
+                    $result->setLiveKilometer($race->getDistance());
                 } else {
                     // For non-finishers, set a time that is clearly higher than any finisher
                     // This simulates them still being on the course or having a very long time
-                    $extendedTotalSeconds = $totalRaceSeconds * $faker->randomFloat(2, 1.2, 2.0); // 20% to 100% longer
+                    $extendedTotalSeconds = $totalRaceSeconds * $faker->randomFloat(2, 0.5, 1.5); // 50% to 150% of expected time
                     $hours = floor($extendedTotalSeconds / 3600);
                     $minutes = floor(($extendedTotalSeconds / 60) % 60);
                     $seconds = $extendedTotalSeconds % 60;
                     $timeString = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
                     $result->setTime($timeString);
+
+                    // Calculate liveKilometer for unfinished runners
+                    // Assuming a constant speed for simplicity in fixtures
+                    $averageSpeedKmh = 60 / $totalSecondsPerKm; // km/h
+                    $timeInHours = $extendedTotalSeconds / 3600;
+                    $liveKm = $averageSpeedKmh * $timeInHours;
+                    $result->setLiveKilometer(min($liveKm, $race->getDistance())); // Ensure it doesn't exceed race distance
                 }
 
                 $resultCreateAt = $faker->dateTimeBetween($race->getStartDate() < new \DateTime() ? $race->getStartDate() : 'now', 'now');
@@ -134,6 +155,7 @@ class AppFixtures extends Fixture
                     // If all runners are finished in a current race, randomly pick one and make them unfinished
                     $randomResult = $faker->randomElement($raceResults);
                     $randomResult->setHasFinished(false);
+                    $randomResult->setLiveKilometer($faker->randomFloat(2, 0, $race->getDistance() * 0.9)); // Set a liveKilometer less than race distance
                 }
             }
 
@@ -167,7 +189,14 @@ class AppFixtures extends Fixture
                 }
 
                 if ($hasUnfinishedRunners) { // Current race
-                    $race->setKilometer($faker->randomFloat(2, 0, $race->getDistance()));
+                    // Set race kilometer to the max liveKilometer of unfinished runners
+                    $maxLiveKilometer = 0.0;
+                    foreach ($raceResults as $result) {
+                        if (!$result->isHasFinished() && $result->getLiveKilometer() > $maxLiveKilometer) {
+                            $maxLiveKilometer = $result->getLiveKilometer();
+                        }
+                    }
+                    $race->setKilometer($maxLiveKilometer);
                 } else { // Finished race
                     $race->setKilometer($race->getDistance());
                 }

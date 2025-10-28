@@ -51,6 +51,10 @@ class Race
     #[Groups(['race:read'])]
     private ?float $distance = null;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[Groups(['race:read'])]
+    private bool $isFinished = false;
+
     #[ORM\OneToMany(mappedBy: 'race', targetEntity: Result::class)]
     #[Ignore]
     private Collection $results;
@@ -59,6 +63,18 @@ class Race
     {
         $this->results = new ArrayCollection();
         $this->createAt = new \DateTime();
+    }
+
+    public function isFinished(): bool
+    {
+        return $this->isFinished;
+    }
+
+    public function setIsFinished(bool $isFinished): static
+    {
+        $this->isFinished = $isFinished;
+
+        return $this;
     }
 
     public function getId(): ?int

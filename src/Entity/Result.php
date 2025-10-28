@@ -38,6 +38,10 @@ class Result
     #[Groups(['result:read'])]
     private ?bool $hasFinished = null;
 
+    #[ORM\Column(type: Types::FLOAT, options: ['default' => 0.0])]
+    #[Groups(['result:read'])]
+    private float $liveKilometer = 0.0;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Groups(['result:read'])]
     private ?\DateTimeInterface $createAt = null;
@@ -49,6 +53,24 @@ class Result
     public function __construct()
     {
         $this->createAt = new \DateTime();
+    }
+
+    public function getLiveKilometer(): float
+    {
+        return $this->liveKilometer;
+    }
+
+    public function setLiveKilometer(float $liveKilometer): static
+    {
+        $this->liveKilometer = $liveKilometer;
+
+        return $this;
+    }
+
+    #[Groups(['result:read'])]
+    public function getRunnerBibNumber(): ?int
+    {
+        return $this->getRunner() ? $this->getRunner()->getBibNumber() : null;
     }
 
     public function getId(): ?int

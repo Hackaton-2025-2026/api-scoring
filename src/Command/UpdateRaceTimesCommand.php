@@ -130,6 +130,21 @@ class UpdateRaceTimesCommand extends Command
                 $result->setRunnerRank($index + 1);
                 $this->entityManager->persist($result);
             }
+
+            // After all results are processed and potentially updated, check if the race is finished
+            $allRunnersFinished = true;
+            foreach ($raceResults as $result) {
+                if (!$result->isHasFinished()) {
+                    $allRunnersFinished = false;
+                    break;
+                }
+            }
+
+            if ($race->isFinished() !== $allRunnersFinished) {
+                $race->setIsFinished($allRunnersFinished);
+                $this->entityManager->persist($race);
+            }
+
             $updatedRaces[] = $race;
         }
 

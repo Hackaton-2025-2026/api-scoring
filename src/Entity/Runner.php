@@ -37,7 +37,7 @@ class Runner
     private ?string $nationality = null;
 
     #[ORM\Column]
-    #[Groups(['runner:read'])]
+    #[Groups(['runner:read', 'result:read'])]
     private ?int $bibNumber = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]

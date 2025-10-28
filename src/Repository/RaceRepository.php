@@ -31,17 +31,18 @@ class RaceRepository extends ServiceEntityRepository
         if ($status) {
             $today = new \DateTime();
             if ($status === 'past') {
-                $qb->andWhere('r.startDate < :today');
-                $qb->setParameter('today', $today);
+                $qb->andWhere('r.startDate < :today')
+                    ->andWhere('r.isFinished = :isFinished')
+                    ->setParameter('today', $today)
+                    ->setParameter('isFinished', true);
             } elseif ($status === 'current') {
-                $startOfDay = (clone $today)->setTime(0, 0, 0);
-                $endOfDay = (clone $today)->setTime(23, 59, 59);
-                $qb->andWhere('r.startDate BETWEEN :start AND :end')
-                    ->setParameter('start', $startOfDay)
-                    ->setParameter('end', $endOfDay);
+                $qb->andWhere('r.startDate <= :today')
+                    ->andWhere('r.isFinished = :isFinished')
+                    ->setParameter('today', $today)
+                    ->setParameter('isFinished', false);
             } elseif ($status === 'future') {
-                $qb->andWhere('r.startDate > :today');
-                $qb->setParameter('today', $today);
+                $qb->andWhere('r.startDate > :today')
+                    ->setParameter('today', $today);
             }
         }
 
