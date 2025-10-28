@@ -1,11 +1,7 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "api/index.php",
-      "use": "@vercel/php@0.6.0",
-      "config": { "runtime": "php-8.x" }
-    }
+    { "src": "index.php", "use": "@vercel/php" }
   ],
   "routes": [
     {
