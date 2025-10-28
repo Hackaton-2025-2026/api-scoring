@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web
+    ports:
+      - "8000:80" # Map host port 8000 to container port 80
+    volumes:
+      - .:/var/www/html # Mount the current directory into the container
+    depends_on:
+      - mysql
+    environment:
+      # Symfony environment variables
+      DATABASE_URL: mysql://app_user:app_password@mysql:3306/app_db?serverVersion=8.0.32&charset=utf8mb4
+      APP_ENV: dev # Or prod, depending on your needs
+      APP_SECRET: your_app_secret # Replace with a strong secret
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.0 # Use a specific version of MySQL
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password # Root password for MySQL
+      MYSQL_DATABASE: app_db # Database name for the Symfony app
+      MYSQL_USER: app_user # User for the Symfony app
+      MYSQL_PASSWORD: app_password # Password for the Symfony app
+    ports:
+      - "3306:3306" # Expose MySQL port
+    volumes:
+      - db_data:/var/lib/mysql # Persist database data
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    links:
+      - mysql:mysql
+    ports:
+      - 8080:80
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: root_password
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:

@@ -1,0 +1,9 @@
+security:
+    enable_authenticator_manager: true
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            pattern: ^/
+            security: false
