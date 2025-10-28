@@ -57,9 +57,9 @@ EXPOSE 80
 CMD ["/bin/bash", "-c", "\
     echo '📦 Running Symfony initialization...'; \
     cron; \
-    su www-data -c \"php bin/console doctrine:database:create --if-not-exists || true\"; \
-    su www-data -c \"php bin/console doctrine:migrations:migrate --no-interaction || true\"; \
-    su www-data -c \"php bin/console doctrine:fixtures:load --no-interaction || true\"; \
-    su www-data -c \"php bin/console cache:clear --no-warmup || true\"; \
+    php bin/console doctrine:database:create --if-not-exists || true; \
+    php bin/console doctrine:migrations:migrate --no-interaction || true; \
+    php bin/console doctrine:fixtures:load --no-interaction || true; \
+    php bin/console cache:clear --no-warmup || true; \
     echo '🚀 Starting Apache...'; \
     apache2-foreground"]
