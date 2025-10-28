@@ -28,9 +28,12 @@ fi
 
 echo "📦 Database ready, updating schema and loading fixtures..."
 
-# Fix permissions
+# Make sure var directories exist
 mkdir -p var/cache var/log
+
+# Fix permissions so the running process can write
 chmod -R 777 var
+chmod -R 777 var/cache var/log
 
 # Force update schema
 php bin/console doctrine:schema:update --force
