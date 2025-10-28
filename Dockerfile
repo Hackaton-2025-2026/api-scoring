@@ -1,65 +1,54 @@
+# Use official PHP + Apache image
 FROM php:8.1-apache
 
+# Set working directory
 WORKDIR /var/www/html
 
-# Set environment variables for production build
+# Environment variables (these will be overridden by Render dashboard)
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
 
-# Installer dépendances système et PHP
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     git unzip libpq-dev libzip-dev cron libicu-dev libxml2-dev zlib1g-dev \
-    && docker-php-ext-install pdo pdo_mysql intl zip opcache
+    && docker-php-ext-install pdo pdo_mysql intl zip opcache \
+    && a2enmod rewrite \
+    && rm -rf /var/lib/apt/lists/*
 
-# Activer mod_rewrite
-RUN a2enmod rewrite
-
-# Définir document root Symfony
+# Set Apache document root to Symfony public
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
-    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN sed -ri -e "s!/var/www/html!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/sites-available/*.conf \
+    && sed -ri -e "s!/var/www/!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Copier Composer
+# Copy Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copier composer.json et composer.lock pour installer les dépendances
+# Copy composer files and install dependencies
 COPY composer.json composer.lock ./
+RUN composer install --optimize-autoloader --no-dev --no-scripts
 
-# Installer dépendances PHP (sans exécuter les scripts post-install)
-RUN composer install --optimize-autoloader --no-scripts
-
-# Copier le reste du projet
+# Copy the rest of the project
 COPY . /var/www/html
 
-# Créer les répertoires nécessaires si absents
-RUN mkdir -p var/cache var/log public
+# Ensure directories exist and have correct permissions
+RUN mkdir -p var/cache var/log public \
+    && chown -R www-data:www-data var public \
+    && chmod -R 777 var/cache var/log
 
-# Créer un fichier .env temporaire pour le build
-RUN echo "APP_SECRET=your_app_secret_placeholder" > .env
-RUN echo "DATABASE_URL=sqlite:///var/data.db" >> .env
+RUN echo "APP_SECRET=fe3a3ab49fe8be9fe9e0b67ab66390b0" > .env
+RUN echo "DATABASE_URL=postgresql://api_scoring_db_user:fY9YYZqdaoZ8EnKqeE6IPOn7oBWmKZ6L@dpg-d40ihmjuibrs73cs8bvg-a/api_scoring_db" >> .env
 
-# Permissions correctes AVANT de lancer les commands Symfony
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/public \
-    && chmod -R 777 /var/www/html/var/cache \
-    && chmod -R 777 /var/www/html/var/log
-
-# Copier cron (optionnel)
+# Copy cronjob if needed
 COPY cronjob /etc/cron.d/cronjob
 RUN chmod 0644 /etc/cron.d/cronjob \
     && crontab /etc/cron.d/cronjob
 
-RUN mkdir -p var/cache var/log \
-    && chown -R www-data:www-data var
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Expose Apache port
 EXPOSE 80
 
-CMD ["/bin/bash", "-c", "\
-    echo '📦 Running Symfony initialization...'; \
-    cron; \
-    php bin/console doctrine:database:create --if-not-exists || true; \
-    php bin/console doctrine:migrations:migrate --no-interaction || true; \
-    php bin/console doctrine:fixtures:load --no-interaction || true; \
-    php bin/console cache:clear --no-warmup || true; \
-    echo '🚀 Starting Apache...'; \
-    apache2-foreground"]
+# Start container using entrypoint
+CMD ["docker-entrypoint.sh"]
