@@ -48,7 +48,8 @@ class AppFixtures extends Fixture
 
             $race->setCreateAt($faker->dateTimeBetween('-5 years', '-2 years'));
             $race->setUpdatedAt($faker->dateTimeBetween($race->getCreateAt(), 'now'));
-            $race->setKilometer($faker->randomFloat(2, 10, 100));
+            $race->setKilometer(0.0); // Initialize kilometer to 0
+            $race->setDistance($faker->randomFloat(2, 20, 200)); // Set a random distance for the race
             $manager->persist($race);
             $races[] = $race;
         }
@@ -120,6 +121,22 @@ class AppFixtures extends Fixture
                 $raceResults[] = $result;
             }
 
+            // Ensure at least one runner is unfinished for "current" races if all somehow finished
+            if ($index < $numberOfCurrentRaces) {
+                $allFinished = true;
+                foreach ($raceResults as $result) {
+                    if (!$result->isHasFinished()) {
+                        $allFinished = false;
+                        break;
+                    }
+                }
+                if ($allFinished && !empty($raceResults)) {
+                    // If all runners are finished in a current race, randomly pick one and make them unfinished
+                    $randomResult = $faker->randomElement($raceResults);
+                    $randomResult->setHasFinished(false);
+                }
+            }
+
             // Sort results by time to determine rank
             usort($raceResults, function ($a, $b) {
                 // Non-finishers should have a "worse" rank, so they come after finishers
@@ -137,6 +154,23 @@ class AppFixtures extends Fixture
             foreach ($raceResults as $index => $result) {
                 $result->setRunnerRank($index + 1);
                 $manager->persist($result);
+            }
+
+            // After generating all results for a race, determine its overall status and set kilometer
+            if ($race->getStartDate() <= new \DateTime()) { // Past or current race
+                $hasUnfinishedRunners = false;
+                foreach ($raceResults as $result) {
+                    if (!$result->isHasFinished()) {
+                        $hasUnfinishedRunners = true;
+                        break;
+                    }
+                }
+
+                if ($hasUnfinishedRunners) { // Current race
+                    $race->setKilometer($faker->randomFloat(2, 0, $race->getDistance()));
+                } else { // Finished race
+                    $race->setKilometer($race->getDistance());
+                }
             }
         }
 

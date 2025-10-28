@@ -12,11 +12,15 @@ services:
       - .:/var/www/html # Mount the current directory into the container
     depends_on:
       - mysql
+      - mercure
     environment:
       # Symfony environment variables
       DATABASE_URL: mysql://app_user:app_password@mysql:3306/app_db?serverVersion=8.0.32&charset=utf8mb4
       APP_ENV: dev # Or prod, depending on your needs
       APP_SECRET: your_app_secret # Replace with a strong secret
+      MERCURE_URL: http://mercure/.well-known/mercure # Internal URL for Symfony to publish
+      MERCURE_PUBLIC_URL: ${API_PUBLIC_URL}/.well-known/mercure # Public URL for frontend to subscribe
+      MERCURE_JWT_SECRET: fz2Ghtz9n4E4EEoa/pwT//cUX7XaVjib+CXwGebpNVI= # Use the same secret as the mercure service
     networks:
       - app-network
 
@@ -32,6 +36,19 @@ services:
       - "3306:3306" # Expose MySQL port
     volumes:
       - db_data:/var/lib/mysql # Persist database data
+    networks:
+      - app-network
+
+  mercure:
+    image: dunglas/mercure:latest # Official Mercure image
+    container_name: mercure
+    ports:
+      - "3000:80" # Expose Mercure on port 3000
+    environment:
+      MERCURE_PUBLISH_URL: http://mercure/.well-known/mercure # Internal URL for publishing
+      MERCURE_SUBSCRIBE_URL: http://mercure/.well-known/mercure # Internal URL for subscribing
+      MERCURE_JWT_SECRET: fz2Ghtz9n4E4EEoa/pwT//cUX7XaVjib+CXwGebpNVI= # Use a secret for JWT signing
+      MERCURE_DEBUG: 1 # Enable debug mode
     networks:
       - app-network
 

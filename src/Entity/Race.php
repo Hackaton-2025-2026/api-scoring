@@ -47,6 +47,10 @@ class Race
     #[Groups(['race:read'])]
     private ?float $kilometer = null;
 
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    #[Groups(['race:read'])]
+    private ?float $distance = null;
+
     #[ORM\OneToMany(mappedBy: 'race', targetEntity: Result::class)]
     #[Ignore]
     private Collection $results;
@@ -142,6 +146,18 @@ class Race
     public function setKilometer(?float $kilometer): static
     {
         $this->kilometer = $kilometer;
+
+        return $this;
+    }
+
+    public function getDistance(): ?float
+    {
+        return $this->distance;
+    }
+
+    public function setDistance(?float $distance): static
+    {
+        $this->distance = $distance;
 
         return $this;
     }
